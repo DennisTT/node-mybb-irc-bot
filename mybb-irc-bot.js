@@ -117,25 +117,44 @@ var getHelp = function(bot, to) {
 var searchUser = function(bot, to, searchName) {
   console.log('Look for user: ' + searchName);
   
-  request.post('http://community.mybb.com/memberlist.php', { form: { username: searchName } }, function (error, response, body) {
+  request.post('http://community.mybb.com/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       $ = cheerio.load(body);
 
       // Third tr on the page
-      var userRow = $('tr').eq(2);
-      console.log('The row: ', userRow.html())
-  
-      var username = userRow.children('td').eq(1).children('a').eq(0).text()
-      if (username.toLowerCase() == searchName.toLowerCase()) {
-        var profileLink = userRow.children('td').eq(1).children('a').eq(0).attr('href');
-        var postCount = userRow.children('td').eq(4).text();
-        var regDate = userRow.children('td').eq(2).text().split(',')[0];
-        var lastVisitDate = userRow.children('td').eq(3).text().split(',')[0];
-        bot.say(to, username + ': ' + postCount + ' posts on the Community Forums, last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
-      }
-      else {
-        if (username) {
-          bot.say(to, 'I couldn\'t find ' + searchName + ', did you mean ' + username + '?');
+      console.log($('tr').toArray().length);
+    
+      var usernamesFound = [];
+    
+      var found = false;
+    
+      $('tr').each(function(i, e) {
+        var numCells = $(this).children('td').toArray().length;
+        if (numCells != 6 || i < 2) {
+          return;
+        }
+      
+        var userRow = $(this);
+        console.log('The row: ', userRow.html())
+
+        var username = userRow.children('td').eq(1).children('a').eq(0).text()
+        usernamesFound.push(username);
+      
+        if (username.toLowerCase() == searchName.toLowerCase()) {
+          found = true;
+        
+          var profileLink = userRow.children('td').eq(1).children('a').eq(0).attr('href');
+          var postCount = userRow.children('td').eq(4).text();
+          var regDate = userRow.children('td').eq(2).text().split(',')[0];
+          var lastVisitDate = userRow.children('td').eq(3).text().split(',')[0];
+          bot.say(to, username + ': ' + postCount + ' posts on the Community Forums, last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
+        }
+      
+      });
+    
+      if (!found) {
+        if (usernamesFound.length > 0) {
+          bot.say(to, 'I couldn\'t find ' + searchName + ', did you mean ' + usernamesFound[Math.floor(Math.random()*usernamesFound.length)] + '?');
         }
         else {
           bot.say(to, 'I couldn\'t find ' + searchName);
@@ -194,3 +213,5 @@ var searchGoogle = function(bot, to, term) {
     }
   });
 };
+
+

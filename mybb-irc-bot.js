@@ -31,6 +31,10 @@ bot.addListener('message#', function (from, to, message) {
     var name = getParams(message).join(' ');
     searchDocs(bot, to, name);
   }
+  else if (message.toLowerCase().indexOf('!google ') == 0 && numParams(message) >= 1) {
+    var term = getParams(message).join(' ');
+    searchGoogle(bot, to, term);
+  }
   else if (message.toLowerCase() == '!help') {
     bot.say(from, 'If you need my help, send me a PM with "help"');
   }
@@ -105,6 +109,7 @@ var getHelp = function(bot, to) {
   bot.say(to, 'I respond to the following commands on channels:');
   bot.say(to, '!user <username> - displays some info about a user on the MyBB Community Forums');
   bot.say(to, '!docs [# results] <search term> - searches MyBB docs for search term, and returns top result (by default) or up to a maximum of 5 if specified');
+  bot.say(to, '!google [# results] <search term> - searches Google for search term, and returns top result (by default) or up to a maximum of 5 if specified');
   bot.say(to, 'In addition, I respond to the following commands by PM:');
   bot.say(to, 'help - this text you\'re reading');
 }
@@ -154,8 +159,37 @@ var searchDocs = function(bot, to, term) {
   google(term + ' site:docs.mybb.com', function(err, next, links){
     if (err) console.error(err);
 
-    for (var i = 0; i < links.length; ++i) {
+    for (var i = 0; i < google.resultsPerPage; ++i) {
       bot.say(to, links[i].title + ' - ' + links[i].link);
+    }
+    
+    if (links.length == 0) {
+      bot.say(to, 'No MyBB docs results for search term: ' + term);
+    }
+  });
+};
+
+var searchGoogle = function(bot, to, term) {
+
+  google.resultsPerPage = 1;
+  
+  var firstTerm = term.split(' ')[0];
+  if (isNumber(firstTerm)) {
+    google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
+    term = term.split(' ').slice(1).join(' ');
+  }
+  
+  console.log('Search Google for: ' + term + ' and get ' + google.resultsPerPage + ' results');
+  
+  google(term, function(err, next, links){
+    if (err) console.error(err);
+
+    for (var i = 0; i < google.resultsPerPage; ++i) {
+      bot.say(to, links[i].title + ' - ' + links[i].link);
+    }
+    
+    if (links.length == 0) {
+      bot.say(to, 'No Google results for search term: ' + term);
     }
   });
 };

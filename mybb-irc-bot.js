@@ -159,7 +159,7 @@ var searchDocs = function(bot, to, term) {
   google(term + ' site:docs.mybb.com', function(err, next, links){
     if (err) console.error(err);
 
-    for (var i = 0; i < google.resultsPerPage; ++i) {
+    for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
       bot.say(to, links[i].title + ' - ' + links[i].link);
     }
     
@@ -184,7 +184,7 @@ var searchGoogle = function(bot, to, term) {
   google(term, function(err, next, links){
     if (err) console.error(err);
 
-    for (var i = 0; i < google.resultsPerPage; ++i) {
+    for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
       bot.say(to, links[i].title + ' - ' + links[i].link);
     }
     

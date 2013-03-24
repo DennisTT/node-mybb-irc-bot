@@ -4,7 +4,11 @@ var config = {
   channels: ['#mybb'],
   botName: 'MyBBot',
   nickservPassword: '',
+  floodProtectionDelay: 1000
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// Actual bot stuff
 
 // Get the lib
 var irc = require('irc');
@@ -17,12 +21,13 @@ var bot = new irc.Client(config.server, config.botName, {
   channels: config.channels,
   userName: config.botName,
   floodProtection: true,
-  floodProtectionDelay: 1000
+  floodProtectionDelay: config.floodProtectionDelay
 });
 
-// Listen for any message, say to him/her in the room
+// Listen for any channel messages
 bot.addListener('message#', function (from, to, message) {
   console.log(from + ' => ' + to + ': ' + message);
+  
   if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1) {
     var searchName = getParams(message).join(' ');
     searchUser(bot, to, searchName);
@@ -75,21 +80,6 @@ bot.addListener('error', function(message) {
 //});
 
 ///////////////////////////////////////////////////////////////////////////////
-// Helpers
-
-var numParams = function(text) {
-  return text.split(' ').length-1;
-};
-
-var getParams = function(text) {
-  return text.split(' ').slice(1)
-}
-
-var isNumber = function(n) {
-  return !isNaN(parseFloat(n)) && isFinite(n);
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // Actions
 
 var recoverNick = function() {
@@ -117,17 +107,15 @@ var getHelp = function(bot, to) {
 var searchUser = function(bot, to, searchName) {
   console.log('Look for user: ' + searchName);
   
+  // Search the member list, hopefully the user will be somewhere within the first 300 results
   request.post('http://community.mybb.com/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       $ = cheerio.load(body);
-
-      // Third tr on the page
-      console.log($('tr').toArray().length);
     
       var usernamesFound = [];
-    
       var found = false;
     
+      // Look at all the table rows that have 6 columns, and aren't the first 2 (headers)
       $('tr').each(function(i, e) {
         var numCells = $(this).children('td').toArray().length;
         if (numCells != 6 || i < 2) {
@@ -135,12 +123,12 @@ var searchUser = function(bot, to, searchName) {
         }
       
         var userRow = $(this);
-        console.log('The row: ', userRow.html())
 
         var username = userRow.children('td').eq(1).children('a').eq(0).text()
         usernamesFound.push(username);
       
         if (username.toLowerCase() == searchName.toLowerCase()) {
+          // User matched!
           found = true;
         
           var profileLink = userRow.children('td').eq(1).children('a').eq(0).attr('href');
@@ -166,8 +154,8 @@ var searchUser = function(bot, to, searchName) {
 
 var searchDocs = function(bot, to, term) {
 
+  // Set number of results per page (it might come from the first word of the term)
   google.resultsPerPage = 1;
-  
   var firstTerm = term.split(' ')[0];
   if (isNumber(firstTerm)) {
     google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
@@ -179,6 +167,7 @@ var searchDocs = function(bot, to, term) {
   google(term + ' site:docs.mybb.com', function(err, next, links){
     if (err) console.error(err);
 
+    // We want to show the lesser of what we have, or what we've specified as the limit
     for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
       bot.say(to, links[i].title + ' - ' + links[i].link);
     }
@@ -191,8 +180,8 @@ var searchDocs = function(bot, to, term) {
 
 var searchGoogle = function(bot, to, term) {
 
+  // Set number of results per page (it might come from the first word of the term)
   google.resultsPerPage = 1;
-  
   var firstTerm = term.split(' ')[0];
   if (isNumber(firstTerm)) {
     google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
@@ -204,6 +193,7 @@ var searchGoogle = function(bot, to, term) {
   google(term, function(err, next, links){
     if (err) console.error(err);
 
+    // We want to show the lesser of what we have, or what we've specified as the limit
     for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
       bot.say(to, links[i].title + ' - ' + links[i].link);
     }
@@ -214,4 +204,19 @@ var searchGoogle = function(bot, to, term) {
   });
 };
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+var numParams = function(text) {
+  return text.split(' ').length-1;
+};
+
+var getParams = function(text) {
+  return text.split(' ').slice(1)
+}
+
+var isNumber = function(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
 

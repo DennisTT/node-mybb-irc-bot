@@ -2,7 +2,8 @@
 var config = {
   server: 'irc.freenode.net',
   channels: ['#mybb'],
-	botName: 'MyBBot'
+  botName: 'MyBBot',
+  nickservPassword: '',
 };
 
 // Get the lib
@@ -49,10 +50,25 @@ bot.addListener('pm', function (from, message) {
   }
 });
 
+// On connection
+bot.addListener('motd', function(message) {
+  console.log('MOTD received');
+  
+  // Check name
+  if (config.nickservPassword != '') {
+    recoverNick();
+  }
+});
+
 // Error handler
 bot.addListener('error', function(message) {
   console.log('error: ', message);
 });
+
+// Debug response handler
+//bot.addListener('raw', function (message) {
+//  console.log('raw: ', message);
+//});
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -71,6 +87,19 @@ var isNumber = function(n) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Actions
+
+var recoverNick = function() {
+  bot.say('NickServ', 'identify ' + config.botName + ' ' + config.nickservPassword);
+  setTimeout(function() {
+    bot.say('NickServ', 'ghost ' + config.botName);
+  }, 3000);
+  setTimeout(function() {
+    bot.say('NickServ', 'release ' + config.botName);
+  }, 6000);  
+  setTimeout(function() {
+    bot.send('NICK', config.botName);
+  }, 9000);
+}
 
 var getHelp = function(bot, to) {
   bot.say(to, 'I respond to the following commands on channels:');

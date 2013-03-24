@@ -1,0 +1,33 @@
+{
+  "name": "node-mybb-irc-bot",
+  "description": "An IRC bot that does various things related to MyBB",
+  "version": "1.0.0",
+  "maintainers": [
+    {
+      "name": "Dennis Tsang",
+      "email": "",
+      "web": "http://dennistt.net"
+    }
+  ],
+  "dependencies": {
+    "irc": "~0.3.6",
+    "request": "~2.16.6",
+    "cheerio": "~0.10.8"
+  },
+  "bugs": {
+    "web": "https://github.com/DennisTT/node-mybb-irc-bot/issues"
+  },
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/DennisTT/node-mybb-irc-bot.git"
+    }
+  ],
+  "licenses": [
+    {
+      "name": "",
+      "url": ""
+    }
+  ],
+  "homepage": "https://github.com/DennisTT/node-mybb-irc-bot"
+}

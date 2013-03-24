@@ -147,7 +147,7 @@ var searchUser = function(bot, to, searchName) {
           var postCount = userRow.children('td').eq(4).text();
           var regDate = userRow.children('td').eq(2).text().split(',')[0];
           var lastVisitDate = userRow.children('td').eq(3).text().split(',')[0];
-          bot.say(to, username + ': ' + postCount + ' posts on the Community Forums, last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
+          bot.say(to, '[' + username + ']: ' + postCount + ' posts on the Community Forums, last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
         }
       
       });

@@ -9,6 +9,7 @@ var config = {
 var irc = require('irc');
 var request = require('request');
 var cheerio = require('cheerio');
+var google = require('google');
 
 // Create the bot name
 var bot = new irc.Client(config.server, config.botName, {
@@ -19,19 +20,29 @@ var bot = new irc.Client(config.server, config.botName, {
 });
 
 // Listen for any message, say to him/her in the room
-bot.addListener('message', function (from, to, message) {
+bot.addListener('message#', function (from, to, message) {
   console.log(from + ' => ' + to + ': ' + message);
-  if (message.indexOf('!user ') == 0 && numParams(message) >= 1) {
+  if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1) {
     var searchName = getParams(message).join(' ');
     searchUser(bot, to, searchName);
+  }
+  else if (message.toLowerCase().indexOf('!docs ') == 0 && numParams(message) >= 1) {
+    var name = getParams(message).join(' ');
+    searchDocs(bot, to, name);
+  }
+  else if (message.toLowerCase() == '!help') {
+    bot.say(from, 'If you need my help, send me a PM with "help"');
   }
 });
 
 // Listen to PMs
 bot.addListener('pm', function (from, message) {
   console.log(from + ' => ME: ' + message);
-  if (message == 'help') {
+  if (message.toLowerCase() == 'help') {
     getHelp(bot, from);
+  }
+  else if (message.toLowerCase() == 'hello') {
+    bot.say(from, 'Hello to you too!');
   }
   else {
     bot.say(from, 'Sorry, I don\'t understand what you want.  Say "help" if you need help.');
@@ -54,26 +65,19 @@ var getParams = function(text) {
   return text.split(' ').slice(1)
 }
 
-var say = function(client, to, something) {
-  console.log(something);
-  if (something instanceof Array) {
-    for (var i in something) {
-      client.say(to, something[i]);
-    }
-  }
-  else {
-    client.say(to, something);
-  }
+var isNumber = function(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Actions
 
 var getHelp = function(bot, to) {
-  say(bot, to, ['I respond to the following commands on channels:',
-  '!user <username> - displays some info about a user on the Community Forums',
-  'In addition, I respond to the following commands by PM:',
-  'help - this text']);
+  bot.say(to, 'I respond to the following commands on channels:');
+  bot.say(to, '!user <username> - displays some info about a user on the MyBB Community Forums');
+  bot.say(to, '!docs [# results] <search term> - searches MyBB docs for search term, and returns top result (by default) or up to a maximum of 5 if specified');
+  bot.say(to, 'In addition, I respond to the following commands by PM:');
+  bot.say(to, 'help - this text you\'re reading');
 }
 
 var searchUser = function(bot, to, searchName) {
@@ -92,7 +96,7 @@ var searchUser = function(bot, to, searchName) {
         var profileLink = userRow.children('td').eq(1).children('a').eq(0).attr('href');
         var postCount = userRow.children('td').eq(4).text();
         var regDate = userRow.children('td').eq(2).text().split(',')[0];
-        bot.say(to, searchName + ' has ' + postCount + ' post(s) on the Community Forums and has been a member since ' + regDate + '. Profile: ' + profileLink);
+        bot.say(to, username + ' has ' + postCount + ' post(s) on the Community Forums and has been a member since ' + regDate + '. Profile: ' + profileLink);
       }
       else {
         if (username) {
@@ -104,5 +108,25 @@ var searchUser = function(bot, to, searchName) {
       }
     }
   });
-
 }
+
+var searchDocs = function(bot, to, term) {
+
+  google.resultsPerPage = 1;
+  
+  var firstTerm = term.split(' ')[0];
+  if (isNumber(firstTerm)) {
+    google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
+    term = term.split(' ').slice(1).join(' ');
+  }
+  
+  console.log('Search docs for: ' + term + ' and get ' + google.resultsPerPage + ' results');
+  
+  google(term + ' site:docs.mybb.com', function(err, next, links){
+    if (err) console.error(err);
+
+    for (var i = 0; i < links.length; ++i) {
+      bot.say(to, links[i].title + ' - ' + links[i].link);
+    }
+  });
+};

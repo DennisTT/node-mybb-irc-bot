@@ -130,7 +130,8 @@ var searchUser = function(bot, to, searchName) {
         var profileLink = userRow.children('td').eq(1).children('a').eq(0).attr('href');
         var postCount = userRow.children('td').eq(4).text();
         var regDate = userRow.children('td').eq(2).text().split(',')[0];
-        bot.say(to, username + ' has ' + postCount + ' post(s) on the Community Forums and has been a member since ' + regDate + '. Profile: ' + profileLink);
+        var lastVisitDate = userRow.children('td').eq(3).text().split(',')[0];
+        bot.say(to, username + ': ' + postCount + ' posts on the Community Forums, last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
       }
       else {
         if (username) {

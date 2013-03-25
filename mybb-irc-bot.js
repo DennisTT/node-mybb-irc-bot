@@ -165,14 +165,20 @@ var searchDocs = function(bot, to, term) {
   console.log('Search docs for: ' + term + ' and get ' + google.resultsPerPage + ' results');
   
   google(term + ' site:docs.mybb.com', function(err, next, links){
-    if (err) console.error(err);
-
-    // We want to show the lesser of what we have, or what we've specified as the limit
-    for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
-      bot.say(to, links[i].title + ' - ' + links[i].link);
+    if (err) {
+      console.error(err);
+      bot.say(to, 'Error fetching search results. Please try again later.');
+      return;
     }
-    
-    if (links.length == 0) {
+
+    if (links && links.length > 0)
+    {
+      // We want to show the lesser of what we have, or what we've specified as the limit
+      for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
+        bot.say(to, links[i].title + ' - ' + links[i].link);
+      }
+    }
+    else {
       bot.say(to, 'No MyBB docs results for search term: ' + term);
     }
   });
@@ -191,14 +197,20 @@ var searchGoogle = function(bot, to, term) {
   console.log('Search Google for: ' + term + ' and get ' + google.resultsPerPage + ' results');
   
   google(term, function(err, next, links){
-    if (err) console.error(err);
-
-    // We want to show the lesser of what we have, or what we've specified as the limit
-    for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
-      bot.say(to, links[i].title + ' - ' + links[i].link);
+    if (err) {
+      console.error(err);
+      bot.say(to, 'Error fetching search results. Please try again later.');
+      return;
     }
-    
-    if (links.length == 0) {
+
+    if (links && links.length > 0)
+    {
+      // We want to show the lesser of what we have, or what we've specified as the limit
+      for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
+        bot.say(to, links[i].title + ' - ' + links[i].link);
+      }
+    }
+    else {
       bot.say(to, 'No Google results for search term: ' + term);
     }
   });

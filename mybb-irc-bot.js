@@ -175,7 +175,11 @@ var searchDocs = function(bot, to, term) {
     {
       // We want to show the lesser of what we have, or what we've specified as the limit
       for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
-        bot.say(to, links[i].title + ' - ' + links[i].link);
+        var text = links[i].title;
+        if (links[i].link != null) {
+          text += ' - ' + links[i].link;
+        }
+        bot.say(to, text);
       }
     }
     else {
@@ -207,7 +211,11 @@ var searchGoogle = function(bot, to, term) {
     {
       // We want to show the lesser of what we have, or what we've specified as the limit
       for (var i = 0; i < Math.min(links.length, google.resultsPerPage); ++i) {
-        bot.say(to, links[i].title + ' - ' + links[i].link);
+        var text = links[i].title;
+        if (links[i].link != null) {
+          text += ' - ' + links[i].link;
+        }
+        bot.say(to, text);
       }
     }
     else {

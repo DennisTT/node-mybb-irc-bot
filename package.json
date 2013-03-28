@@ -13,7 +13,7 @@
     "irc": "~0.3.6",
     "request": "~2.16.6",
     "cheerio": "~0.10.8",
-    "google": "~0.2.0"
+    "google": "https://github.com/DennisTT/node-google/tarball/master"
   },
   "bugs": {
     "web": "https://github.com/DennisTT/node-mybb-irc-bot/issues"

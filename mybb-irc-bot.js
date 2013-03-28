@@ -107,6 +107,9 @@ var getHelp = function(bot, to) {
 var searchUser = function(bot, to, searchName) {
   console.log('Look for user: ' + searchName);
   
+  if (searchName.toLowerCase() == "dennistt") {
+    var searchName = "Dennis Tsang";
+  }
   // Search the member list, hopefully the user will be somewhere within the first 300 results
   request.post('http://community.mybb.com/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
     if (!error && response.statusCode == 200) {

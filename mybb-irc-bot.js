@@ -15,18 +15,21 @@ var irc = require('irc');
 var request = require('request');
 var cheerio = require('cheerio');
 var google = require('google');
+var util = require('util');
 
 // Create the bot name
 var bot = new irc.Client(config.server, config.botName, {
   channels: config.channels,
   userName: config.botName,
   floodProtection: true,
-  floodProtectionDelay: config.floodProtectionDelay
+  floodProtectionDelay: config.floodProtectionDelay,
+  debug: true,
+  showErrors: true
 });
 
 // Listen for any channel messages
 bot.addListener('message#', function (from, to, message) {
-  console.log(from + ' => ' + to + ': ' + message);
+  util.log(from + ' => ' + to + ': ' + message);
   
   if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1) {
     var searchName = getParams(message).join(' ');
@@ -47,7 +50,7 @@ bot.addListener('message#', function (from, to, message) {
 
 // Listen to PMs
 bot.addListener('pm', function (from, message) {
-  console.log(from + ' => ME: ' + message);
+  util.log(from + ' => ME: ' + message);
   if (message.toLowerCase() == 'help') {
     getHelp(bot, from);
   }
@@ -61,17 +64,16 @@ bot.addListener('pm', function (from, message) {
 
 // On connection
 bot.addListener('motd', function(message) {
-  console.log('MOTD received');
-  
   // Check name
   if (config.nickservPassword != '') {
+    util.log('Recovering nickname');
     recoverNick();
   }
 });
 
 // Error handler
 bot.addListener('error', function(message) {
-  console.log('error: ', message);
+  util.log('error: ', message);
 });
 
 // Debug response handler
@@ -105,7 +107,7 @@ var getHelp = function(bot, to) {
 }
 
 var searchUser = function(bot, to, searchName) {
-  console.log('Look for user: ' + searchName);
+  util.log('Look for user: ' + searchName);
   
   if (searchName.toLowerCase() == "dennistt") {
     var searchName = "Dennis Tsang";
@@ -165,11 +167,11 @@ var searchDocs = function(bot, to, term) {
     term = term.split(' ').slice(1).join(' ');
   }
   
-  console.log('Search docs for: ' + term + ' and get ' + google.resultsPerPage + ' results');
+  util.log('Search docs for: ' + term + ' and get ' + google.resultsPerPage + ' results');
   
   google(term + ' site:docs.mybb.com', function(err, next, links){
     if (err) {
-      console.error(err);
+      util.log(err);
       bot.say(to, 'Error fetching search results. Please try again later.');
       return;
     }
@@ -201,11 +203,11 @@ var searchGoogle = function(bot, to, term) {
     term = term.split(' ').slice(1).join(' ');
   }
   
-  console.log('Search Google for: ' + term + ' and get ' + google.resultsPerPage + ' results');
+  util.log('Search Google for: ' + term + ' and get ' + google.resultsPerPage + ' results');
   
   google(term, function(err, next, links){
     if (err) {
-      console.error(err);
+      util.log(err);
       bot.say(to, 'Error fetching search results. Please try again later.');
       return;
     }

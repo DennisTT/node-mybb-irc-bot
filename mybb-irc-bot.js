@@ -54,6 +54,10 @@ bot.addListener('pm', function (from, message) {
   if (message.toLowerCase() == 'help') {
     getHelp(bot, from);
   }
+  else if (message.toLowerCase() == 'about') {
+    bot.say(from, 'I\'m written in Node.js and my author is DennisTT.  My source can be found at https://github.com/DennisTT/node-mybb-irc-bot');
+    bot.say(from, 'Feel free to develop me, but please submit a pull request after.');
+  }
   else if (message.toLowerCase() == 'hello') {
     bot.say(from, 'Hello to you too!');
   }
@@ -104,6 +108,7 @@ var getHelp = function(bot, to) {
   bot.say(to, '!google [# results] <search term> - searches Google for search term, and returns top result (by default) or up to a maximum of 5 if specified');
   bot.say(to, 'In addition, I respond to the following commands by PM:');
   bot.say(to, 'help - this text you\'re reading');
+  bot.say(to, 'about - about me');
 }
 
 var searchUser = function(bot, to, searchName) {

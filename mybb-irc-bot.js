@@ -114,6 +114,7 @@ var getHelp = function(bot, to) {
   bot.say(to, '!user <username> - displays some info about a user on the MyBB Community Forums');
   bot.say(to, '!docs [# results] <search term> - searches MyBB docs for search term, and returns top result (by default) or up to a maximum of 5 if specified');
   bot.say(to, '!google [# results] <search term> - searches Google for search term, and returns top result (by default) or up to a maximum of 5 if specified');
+  bot.say(to, '!battle <term1> vs. <term2> - does a Google battle with number of results between term1 and term2');
   bot.say(to, 'In addition, I respond to the following commands by PM:');
   bot.say(to, 'help - this text you\'re reading');
   bot.say(to, 'about - about me');

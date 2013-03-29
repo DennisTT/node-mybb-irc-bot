@@ -16,6 +16,7 @@ var request = require('request');
 var cheerio = require('cheerio');
 var google = require('google');
 var util = require('util');
+var async = require('async');
 
 // Create the bot name
 var bot = new irc.Client(config.server, config.botName, {
@@ -42,6 +43,13 @@ bot.addListener('message#', function (from, to, message) {
   else if (message.toLowerCase().indexOf('!google ') == 0 && numParams(message) >= 1) {
     var term = getParams(message).join(' ');
     searchGoogle(bot, to, term);
+  }
+  else if (message.toLowerCase().indexOf('!battle ') == 0 && numParams(message) >= 1 && message.toLowerCase().indexOf(' vs. ') >= 0) {
+    var input = getParams(message).join(' ');
+    var terms = input.split(' vs. ');
+    if (terms[0] && terms[1]) {
+      battle(bot, to, terms[0], terms[1]);
+    }
   }
   else if (message.toLowerCase() == '!help') {
     bot.say(from, 'If you need my help, send me a PM with "help"');
@@ -234,6 +242,63 @@ var searchGoogle = function(bot, to, term) {
   });
 };
 
+var battle = function(bot, to, term1, term2) {
+  util.log('Google battle: ' + term1 + ' vs. ' + term2);
+  
+  var getNumResults = function (error, response, body, callback) {
+    if (!error && response.statusCode == 200) {
+      $ = cheerio.load(body);
+      var resultsString = $('#resultStats').text();
+      if (!resultsString)
+      {
+        callback(null, 0);
+        return;
+      }
+      var matches = resultsString.match(/ [\d,]+ /);
+      console.log(matches[0]);
+      var string = matches[0].replace(/,/g, '');
+      console.log(string);
+      var number = parseInt(matches[0].replace(/,/g, ''));
+      console.log(number);
+      callback(null, number);
+    }
+    else {
+      callback(error, null);
+    }
+  };
+
+  async.parallel({
+    '1': function (callback) {
+      request.get('https://www.google.com/search?q=' + term1, function (error, response, body) { 
+        getNumResults(error, response, body, callback);
+      });
+    },
+    '2': function (callback) {
+      request.get('https://www.google.com/search?q=' + term2, function (error, response, body) { 
+        getNumResults(error, response, body, callback);
+      });
+    }
+  },
+  function (error, results) {
+    if (error) {
+      util.log('Google battle error: ', error);
+      bot.say(to, 'Sorry, no referee showed up for this Google battle :(');
+    }
+    else {
+      var winMessage = 'The winner is: '
+      if (results['1'] > results['2']) {
+        winMessage += term1;
+      }
+      else if (results['2'] > results['1']) {
+        winMessage += term2;
+      }
+      else {
+        winMessage = 'It was a tie!';
+      }
+      bot.say(to, 'GOOGLE BATTLE: ' + term1 + ' (' + results['1'] + ') vs. ' + term2 + ' (' + results['2'] + ').  ' + winMessage);
+    }
+  });
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers

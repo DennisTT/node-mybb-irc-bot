@@ -51,6 +51,15 @@ bot.addListener('message#', function (from, to, message) {
       battle(bot, to, terms[0], terms[1]);
     }
   }
+  else if (message.toLowerCase() == '!github') {
+    bot.say(to, 'MyBB GitHub: https://github.com/mybb');
+  }
+  else if (message.toLowerCase() == '!twitter') {
+    bot.say(to, 'MyBB Twitter: https://twitter.com/mybbgroup');
+  }
+  else if (message.toLowerCase() == '!facebook') {
+    bot.say(to, 'MyBB Facebook: https://www.facebook.com/MyBBoard');
+  }
   else if (message.toLowerCase() == '!help') {
     bot.say(from, 'If you need my help, send me a PM with "help"');
   }

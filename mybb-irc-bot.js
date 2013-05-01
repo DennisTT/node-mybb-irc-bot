@@ -52,13 +52,17 @@ bot.addListener('message#', function (from, to, message) {
     }
   }
   else if (message.toLowerCase() == '!github') {
-    bot.say(to, 'MyBB GitHub: https://github.com/mybb');
+    bot.say(to, 'MyBB GitHub: ' + links.github);
+  }
+  else if (message.toLowerCase().indexOf('!github ') == 0 && numParams(message) >= 1) {
+    var params = getParams(message);
+    github(bot, to, params);
   }
   else if (message.toLowerCase() == '!twitter') {
-    bot.say(to, 'MyBB Twitter: https://twitter.com/mybbgroup');
+    bot.say(to, 'MyBB Twitter: ' + links.twitter);
   }
   else if (message.toLowerCase() == '!facebook') {
-    bot.say(to, 'MyBB Facebook: https://www.facebook.com/MyBBoard');
+    bot.say(to, 'MyBB Facebook: ' + links.facebook);
   }
   else if (message.toLowerCase() == '!help') {
     bot.say(from, 'If you need my help, send me a PM with "help"');
@@ -122,6 +126,7 @@ var getHelp = function(bot, to) {
   bot.say(to, 'I respond to the following commands on channels:');
   bot.say(to, '!user <username> - displays some info about a user on the MyBB Community Forums');
   bot.say(to, '!docs [# results] <search term> - searches MyBB docs for search term, and returns top result (by default) or up to a maximum of 5 if specified');
+  bot.say(to, '!github <repository> <pull|issue> <id> - searches the MyBB organization for a repository, pull request or issue');
   bot.say(to, '!google [# results] <search term> - searches Google for search term, and returns top result (by default) or up to a maximum of 5 if specified');
   bot.say(to, '!battle <term1> vs. <term2> - does a Google battle with number of results between term1 and term2');
   bot.say(to, 'In addition, I respond to the following commands by PM:');
@@ -308,7 +313,39 @@ var battle = function(bot, to, term1, term2) {
       bot.say(to, 'GOOGLE BATTLE: ' + term1 + ' (' + results['1'] + ') vs. ' + term2 + ' (' + results['2'] + ').  ' + winMessage);
     }
   });
-}
+};
+
+var github = function(bot, to, params) {
+  var repo = params[0], //repo name
+      view = params[1], //pull or issue
+      id   = params[2], //pull/issue id
+      viewCapital = (view) ? view.charAt(0).toUpperCase() + view.slice(1) : null;
+
+  // go through provided parameters and generate an appropriate answer
+  if(repo) {
+    if(view) {
+      if(view == 'pull' || view == 'issue') {
+        if(view == 'issue') view = 'issues';
+
+        if(id && isNumber(id)) { //user is requesting link to pull/issue
+          bot.say(to, repo + ' ' + viewCapital + ' ' + '#' + id + ': ' + links.github + '/' + repo + '/' + view + '/' + id);
+        }
+        else {
+          bot.say(to, errorMessage);
+        }
+      }
+      else {
+        bot.say(to, errorMessage)
+      }
+    }
+    else { //user is requesting repo url
+      bot.say(to, repo + ' repository: ' + links.github + '/' + repo);
+    }
+  }
+  else {
+    bot.say(to, errorMessage);
+  }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -325,3 +362,13 @@ var isNumber = function(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Reusable bits of text
+
+var errorMessage = 'Incorrect and/or missing parameters. Type !help for help.'
+
+var links = {
+  github: 'https://github.com/mybb',
+  twitter: 'https://twitter.com/mybbgroup',
+  facebook: 'https://www.facebook.com/MyBBoard'
+}

@@ -7,6 +7,26 @@ var config = {
   floodProtectionDelay: 1000
 };
 
+var options = {
+  '#mybb': {
+    friendlyName: 'MyBB',
+    facebook: 'https://www.facebook.com/MyBBoard',
+    twitter: 'https://twitter.com/mybbgroup',
+    github: 'https://github.com/mybb',
+    docs: 'http://docs.mybb.com',
+    forums: 'http://community.mybb.com',
+    forumsName: 'MyBB Community Forums'
+  }
+
+  /*
+   * Important information!
+   * The channel name *must* be in lower case! (e.g. #mybb NOT #MyBB)
+   *
+   * You may use false as the value or don't set facebook, twitter,
+   * github, docs or forums to disable the associated command(s) for that channel
+   */
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Actual bot stuff
 
@@ -30,13 +50,14 @@ var bot = new irc.Client(config.server, config.botName, {
 
 // Listen for any channel messages
 bot.addListener('message#', function (from, to, message) {
+  to = to.toLowerCase();
   util.log(from + ' => ' + to + ': ' + message);
-  
-  if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1) {
+
+  if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1 && options[to].forums != false) {
     var searchName = getParams(message).join(' ');
     searchUser(bot, to, searchName);
   }
-  else if (message.toLowerCase().indexOf('!docs ') == 0 && numParams(message) >= 1) {
+  else if ((message.toLowerCase().indexOf('!docs ') == 0 || message.toLowerCase().indexOf('!wiki ') == 0) && numParams(message) >= 1 && options[to].docs != false) {
     var name = getParams(message).join(' ');
     searchDocs(bot, to, name);
   }
@@ -51,18 +72,18 @@ bot.addListener('message#', function (from, to, message) {
       battle(bot, to, terms[0], terms[1]);
     }
   }
-  else if (message.toLowerCase() == '!github') {
-    bot.say(to, 'MyBB GitHub: ' + links.github);
+  else if (message.toLowerCase() == '!github' && options[to].github != false) {
+    bot.say(to, options[to].friendlyName + ' GitHub: ' + options[to].github);
   }
-  else if (message.toLowerCase().indexOf('!github ') == 0 && numParams(message) >= 1) {
+  else if (message.toLowerCase().indexOf('!github ') == 0 && numParams(message) >= 1 && options[to].github != false) {
     var params = getParams(message);
     github(bot, to, params);
   }
-  else if (message.toLowerCase() == '!twitter') {
-    bot.say(to, 'MyBB Twitter: ' + links.twitter);
+  else if (message.toLowerCase() == '!twitter' && options[to].twitter != false) {
+    bot.say(to, options[to].friendlyName + ' Twitter: ' + options[to].twitter);
   }
-  else if (message.toLowerCase() == '!facebook') {
-    bot.say(to, 'MyBB Facebook: ' + links.facebook);
+  else if (message.toLowerCase() == '!facebook' && options[to].facebook != false) {
+    bot.say(to, options[to].friendlyName + ' Facebook: ' + options[to].facebook);
   }
   else if (message.toLowerCase() == '!help') {
     bot.say(from, 'If you need my help, send me a PM with "help"');
@@ -116,7 +137,7 @@ var recoverNick = function() {
   }, 3000);
   setTimeout(function() {
     bot.say('NickServ', 'release ' + config.botName);
-  }, 6000);  
+  }, 6000);
   setTimeout(function() {
     bot.send('NICK', config.botName);
   }, 9000);
@@ -124,14 +145,13 @@ var recoverNick = function() {
 
 var getHelp = function(bot, to) {
   bot.say(to, 'I respond to the following commands on channels:');
-  bot.say(to, '!user <username> - displays some info about a user on the MyBB Community Forums');
-  bot.say(to, '!docs [# results] <search term> - searches MyBB docs for search term, and returns top result (by default) or up to a maximum of 5 if specified');
-  bot.say(to, '!github <repository> <pull|issue> <id> - searches the MyBB organization for a repository, pull request or issue');
+  bot.say(to, '!user <username> - displays some info about a user on the channel\'s forums');
+  bot.say(to, '!docs [# results] <search term> - searches channel\'s docs for search term, and returns top result (by default) or up to a maximum of 5 if specified');
   bot.say(to, '!google [# results] <search term> - searches Google for search term, and returns top result (by default) or up to a maximum of 5 if specified');
   bot.say(to, '!battle <term1> vs. <term2> - does a Google battle with number of results between term1 and term2');
-  bot.say(to, '!github <repository> <pull|issue> <id> - searches the MyBB organization for a repository, pull request or issue');
-  bot.say(to, '!twitter - links to the MyBB Twitter account');
-  bot.say(to, '!facebook - links to the MyBB Facebook page');
+  bot.say(to, '!facebook - links to the channel\'s Facebook page');
+  bot.say(to, '!twitter - links to the channel\'s Twitter account');
+  bot.say(to, '!github <repository> <pull|issue> <id> - searches the channel\'s organization for a repository, pull request or issue');
   bot.say(to, 'In addition, I respond to the following commands by PM:');
   bot.say(to, 'help - this text you\'re reading');
   bot.say(to, 'about - about me');
@@ -139,43 +159,45 @@ var getHelp = function(bot, to) {
 
 var searchUser = function(bot, to, searchName) {
   util.log('Look for user: ' + searchName);
-  
-  if (searchName.toLowerCase() == "dennistt") {
-    var searchName = "Dennis Tsang";
-  }
+
   // Search the member list, hopefully the user will be somewhere within the first 300 results
-  request.post('http://community.mybb.com/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
+  request.post(options[to].forums + '/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       $ = cheerio.load(body);
-    
+
       var usernamesFound = [];
       var found = false;
-    
+
       // Look at all the table rows that have 6 columns, and aren't the first 2 (headers)
       $('tr').each(function(i, e) {
         var numCells = $(this).children('td').toArray().length;
         if (numCells != 6 || i < 2) {
           return;
         }
-      
+
         var userRow = $(this);
 
         var username = userRow.children('td').eq(1).children('a').eq(0).text()
         usernamesFound.push(username);
-      
+
         if (username.toLowerCase() == searchName.toLowerCase()) {
           // User matched!
           found = true;
-        
+
           var profileLink = userRow.children('td').eq(1).children('a').eq(0).attr('href');
           var postCount = userRow.children('td').eq(4).text();
           var regDate = userRow.children('td').eq(2).text().split(',')[0];
           var lastVisitDate = userRow.children('td').eq(3).text().split(',')[0];
-          bot.say(to, username + ': ' + postCount + ' posts on the Community Forums, last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
+          if (options[to].forumsName != false) {
+            var forumsName = options[to].forumsName;
+          } else {
+            var forumsName = 'forums';
+          }
+          bot.say(to, username + ': ' + postCount + ' posts on the ' + options[to].forumsName + ', last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
         }
-      
+
       });
-    
+
       if (!found) {
         if (usernamesFound.length > 0) {
           bot.say(to, 'I couldn\'t find ' + searchName + ', did you mean ' + usernamesFound[Math.floor(Math.random()*usernamesFound.length)] + '?');
@@ -197,10 +219,10 @@ var searchDocs = function(bot, to, term) {
     google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
     term = term.split(' ').slice(1).join(' ');
   }
-  
+
   util.log('Search docs for: ' + term + ' and get ' + google.resultsPerPage + ' results');
-  
-  google(term + ' site:docs.mybb.com', function(err, next, links){
+
+  google(term + ' site:' + options[to].docs, function(err, next, links){
     if (err) {
       util.log(err);
       bot.say(to, 'Error fetching search results. Please try again later.');
@@ -233,9 +255,9 @@ var searchGoogle = function(bot, to, term) {
     google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
     term = term.split(' ').slice(1).join(' ');
   }
-  
+
   util.log('Search Google for: ' + term + ' and get ' + google.resultsPerPage + ' results');
-  
+
   google(term, function(err, next, links){
     if (err) {
       util.log(err);
@@ -262,7 +284,7 @@ var searchGoogle = function(bot, to, term) {
 
 var battle = function(bot, to, term1, term2) {
   util.log('Google battle: ' + term1 + ' vs. ' + term2);
-  
+
   var getNumResults = function (error, response, body, callback) {
     if (!error && response.statusCode == 200) {
       $ = cheerio.load(body);
@@ -287,12 +309,12 @@ var battle = function(bot, to, term1, term2) {
 
   async.parallel({
     '1': function (callback) {
-      request.get('https://www.google.com/search?q=' + term1, function (error, response, body) { 
+      request.get('https://www.google.com/search?q=' + term1, function (error, response, body) {
         getNumResults(error, response, body, callback);
       });
     },
     '2': function (callback) {
-      request.get('https://www.google.com/search?q=' + term2, function (error, response, body) { 
+      request.get('https://www.google.com/search?q=' + term2, function (error, response, body) {
         getNumResults(error, response, body, callback);
       });
     }
@@ -331,7 +353,7 @@ var github = function(bot, to, params) {
         if(view == 'issue') view = 'issues';
 
         if(id && isNumber(id)) { //user is requesting link to pull/issue
-          bot.say(to, repo + ' ' + viewCapital + ' ' + '#' + id + ': ' + links.github + '/' + repo + '/' + view + '/' + id);
+          bot.say(to, repo + ' ' + viewCapital + ' ' + '#' + id + ': ' + options[to].github + '/' + repo + '/' + view + '/' + id);
         }
         else {
           bot.say(to, errorMessage);
@@ -342,7 +364,7 @@ var github = function(bot, to, params) {
       }
     }
     else { //user is requesting repo url
-      bot.say(to, repo + ' repository: ' + links.github + '/' + repo);
+      bot.say(to, repo + ' repository: ' + options[to].github + '/' + repo);
     }
   }
   else {
@@ -370,8 +392,4 @@ var isNumber = function(n) {
 
 var errorMessage = 'Incorrect and/or missing parameters. Type !help for help.'
 
-var links = {
-  github: 'https://github.com/mybb',
-  twitter: 'https://twitter.com/mybbgroup',
-  facebook: 'https://www.facebook.com/MyBBoard'
-}
+// End of file

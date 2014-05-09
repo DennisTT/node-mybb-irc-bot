@@ -3,6 +3,7 @@ var config = {
   server: 'irc.freenode.net',
   channels: ['#mybb'],
   botName: 'MyBBot',
+  realName: 'https://github.com/DennisTT/node-mybb-irc-bot',
   nickservPassword: '',
   floodProtectionDelay: 1000
 };
@@ -22,6 +23,7 @@ var async = require('async');
 var bot = new irc.Client(config.server, config.botName, {
   channels: config.channels,
   userName: config.botName,
+  realName: config.realName,
   floodProtection: true,
   floodProtectionDelay: config.floodProtectionDelay,
   debug: true,

@@ -4,7 +4,9 @@ var config = {
   channels: ['#mybb'],
   botName: 'MyBBot',
   nickservPassword: '',
-  floodProtectionDelay: 1000
+  floodProtectionDelay: 1000,
+  // Set to true if identifying gives you a cloak and you wish to wear it at all times!
+  joinOnIdentify: true
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -18,15 +20,31 @@ var google = require('google');
 var util = require('util');
 var async = require('async');
 
+var channels = [];
+if(config.joinOnIdentify != true) {
+  channels = config.channels;
+}
+
 // Create the bot name
 var bot = new irc.Client(config.server, config.botName, {
-  channels: config.channels,
+  channels: channels,
   userName: config.botName,
   floodProtection: true,
   floodProtectionDelay: config.floodProtectionDelay,
   debug: true,
   showErrors: true
 });
+
+if(config.joinOnIdentify == true) {
+  bot.addListener('notice', function(from, to, message) {
+    if (from == 'NickServ' && message.indexOf('You are now identified for') == 0) {
+      for(var i=0; i<config.channels.length; i++) {
+        bot.join(config.channels[i]);
+      }
+    }
+    return;
+  });
+}
 
 // Listen for any channel messages
 bot.addListener('message#', function (from, to, message) {

@@ -11,7 +11,7 @@ var options = {
   '#mybb': {
     friendlyName: 'MyBB',
     facebook: 'https://www.facebook.com/MyBBoard',
-    twitter: 'https://twitter.com/mybbgroup',
+    twitter: 'https://twitter.com/MyBB',
     github: 'https://github.com/mybb',
     docs: 'http://docs.mybb.com',
     forums: 'http://community.mybb.com',
@@ -22,8 +22,9 @@ var options = {
    * Important information!
    * The channel name *must* be in lower case! (e.g. #mybb NOT #MyBB)
    *
-   * You may use false as the value or don't set facebook, twitter,
-   * github, docs or forums to disable the associated command(s) for that channel
+   * If the value is not set then the associated command(s) will be disabled
+   * for that channel.
+   *
    */
 };
 
@@ -53,11 +54,11 @@ bot.addListener('message#', function (from, to, message) {
   to = to.toLowerCase();
   util.log(from + ' => ' + to + ': ' + message);
 
-  if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1 && options[to].forums != false) {
+  if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1 && isEnabled(to, 'forums')) {
     var searchName = getParams(message).join(' ');
     searchUser(bot, to, searchName);
   }
-  else if ((message.toLowerCase().indexOf('!docs ') == 0 || message.toLowerCase().indexOf('!wiki ') == 0) && numParams(message) >= 1 && options[to].docs != false) {
+  else if ((message.toLowerCase().indexOf('!docs ') == 0 || message.toLowerCase().indexOf('!wiki ') == 0) && numParams(message) >= 1 && isEnabled(to, 'docs')) {
     var name = getParams(message).join(' ');
     searchDocs(bot, to, name);
   }
@@ -72,18 +73,18 @@ bot.addListener('message#', function (from, to, message) {
       battle(bot, to, terms[0], terms[1]);
     }
   }
-  else if (message.toLowerCase() == '!github' && options[to].github != false) {
-    bot.say(to, options[to].friendlyName + ' GitHub: ' + options[to].github);
+  else if (message.toLowerCase() == '!github' && isEnabled(to, 'github')) {
+    bot.say(to, getOption(to, 'friendlyName') + ' GitHub: ' + getOption(to, 'github'));
   }
-  else if (message.toLowerCase().indexOf('!github ') == 0 && numParams(message) >= 1 && options[to].github != false) {
+  else if (message.toLowerCase().indexOf('!github ') == 0 && numParams(message) >= 1 && isEnabled(to, 'github')) {
     var params = getParams(message);
     github(bot, to, params);
   }
-  else if (message.toLowerCase() == '!twitter' && options[to].twitter != false) {
-    bot.say(to, options[to].friendlyName + ' Twitter: ' + options[to].twitter);
+  else if (message.toLowerCase() == '!twitter' && isEnabled(to, 'twitter')) {
+    bot.say(to, getOption(to, 'friendlyName') + ' Twitter: ' + getOption(to, 'twitter'));
   }
-  else if (message.toLowerCase() == '!facebook' && options[to].facebook != false) {
-    bot.say(to, options[to].friendlyName + ' Facebook: ' + options[to].facebook);
+  else if (message.toLowerCase() == '!facebook' && isEnabled(to, 'facebook')) {
+    bot.say(to, getOption(to, 'friendlyName') + ' Facebook: ' + getOption(to, 'facebook'));
   }
   else if (message.toLowerCase() == '!help') {
     bot.say(from, 'If you need my help, send me a PM with "help"');
@@ -161,7 +162,7 @@ var searchUser = function(bot, to, searchName) {
   util.log('Look for user: ' + searchName);
 
   // Search the member list, hopefully the user will be somewhere within the first 300 results
-  request.post(options[to].forums + '/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
+  request.post(getOption(to, 'forums') + '/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       $ = cheerio.load(body);
 
@@ -188,12 +189,7 @@ var searchUser = function(bot, to, searchName) {
           var postCount = userRow.children('td').eq(4).text();
           var regDate = userRow.children('td').eq(2).text().split(',')[0];
           var lastVisitDate = userRow.children('td').eq(3).text().split(',')[0];
-          if (options[to].forumsName != false) {
-            var forumsName = options[to].forumsName;
-          } else {
-            var forumsName = 'forums';
-          }
-          bot.say(to, username + ': ' + postCount + ' posts on the ' + options[to].forumsName + ', last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
+          bot.say(to, username + ': ' + postCount + ' posts on the ' + getOption(to, 'forumsName') + ', last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
         }
 
       });
@@ -222,7 +218,7 @@ var searchDocs = function(bot, to, term) {
 
   util.log('Search docs for: ' + term + ' and get ' + google.resultsPerPage + ' results');
 
-  google(term + ' site:' + options[to].docs, function(err, next, links){
+  google(term + ' site:' + getOption(to, 'docs'), function(err, next, links){
     if (err) {
       util.log(err);
       bot.say(to, 'Error fetching search results. Please try again later.');
@@ -353,7 +349,7 @@ var github = function(bot, to, params) {
         if(view == 'issue') view = 'issues';
 
         if(id && isNumber(id)) { //user is requesting link to pull/issue
-          bot.say(to, repo + ' ' + viewCapital + ' ' + '#' + id + ': ' + options[to].github + '/' + repo + '/' + view + '/' + id);
+          bot.say(to, repo + ' ' + viewCapital + ' ' + '#' + id + ': ' + getOption(to, 'github') + '/' + repo + '/' + view + '/' + id);
         }
         else {
           bot.say(to, errorMessage);
@@ -364,7 +360,7 @@ var github = function(bot, to, params) {
       }
     }
     else { //user is requesting repo url
-      bot.say(to, repo + ' repository: ' + options[to].github + '/' + repo);
+      bot.say(to, repo + ' repository: ' + getOption(to, 'github') + '/' + repo);
     }
   }
   else {
@@ -387,9 +383,26 @@ var isNumber = function(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
+var isEnabled = function(channel, option) {
+  channel = channel.toLowerCase();
+  if(typeof options[channel] === 'undefined') {
+    return false;
+  }
+  if(typeof options[channel][option] === 'undefined' || options[channel][option] == '') {
+    return false;
+  }
+  return true;
+}
+
+var getOption = function(channel, option) {
+  channel = channel.toLowerCase();
+  if(option == 'forumsName' && (typeof options[channel]['forumsName'] === 'undefined' || options[channel]['forumsName'] == '')) {
+    return 'forums';
+  }
+  return options[channel][option];
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Reusable bits of text
 
 var errorMessage = 'Incorrect and/or missing parameters. Type !help for help.'
-
-// End of file

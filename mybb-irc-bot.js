@@ -151,7 +151,6 @@ var searchUser = function(bot, to, searchName) {
       var usernamesFound = [];
       var found = false;
 
-      // Look at all the table rows that have 6 columns, and aren't the first 2 (headers)
       $('tr').each(function(i, e) {
         var numCells = $(this).children('td').toArray().length;
         if (numCells != 7 || i < 2) {

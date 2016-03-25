@@ -31,7 +31,7 @@ var bot = new irc.Client(config.server, config.botName, {
 // Listen for any channel messages
 bot.addListener('message#', function (from, to, message) {
   util.log(from + ' => ' + to + ': ' + message);
-  
+
   if (message.toLowerCase().indexOf('!user ') == 0 && numParams(message) >= 1) {
     var searchName = getParams(message).join(' ');
     searchUser(bot, to, searchName);
@@ -116,7 +116,7 @@ var recoverNick = function() {
   }, 3000);
   setTimeout(function() {
     bot.say('NickServ', 'release ' + config.botName);
-  }, 6000);  
+  }, 6000);
   setTimeout(function() {
     bot.send('NICK', config.botName);
   }, 9000);
@@ -139,7 +139,7 @@ var getHelp = function(bot, to) {
 
 var searchUser = function(bot, to, searchName) {
   util.log('Look for user: ' + searchName);
-  
+
   if (searchName.toLowerCase() == "dennistt") {
     var searchName = "Dennis Tsang";
   }
@@ -147,35 +147,36 @@ var searchUser = function(bot, to, searchName) {
   request.post('http://community.mybb.com/memberlist.php', { form: { username: searchName, perpage: 300 } }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
       $ = cheerio.load(body);
-    
+
       var usernamesFound = [];
       var found = false;
-    
-      // Look at all the table rows that have 6 columns, and aren't the first 2 (headers)
+
+      // Look at the list of users we have been given
       $('tr').each(function(i, e) {
         var numCells = $(this).children('td').toArray().length;
-        if (numCells != 6 || i < 2) {
+        // Only look at rows that have 7 columns and aren't the first 2 (headers)
+        if (numCells != 7 || i < 2) {
           return;
         }
-      
+
         var userRow = $(this);
 
         var username = userRow.children('td').eq(1).children('a').eq(0).text()
         usernamesFound.push(username);
-      
+
         if (username.toLowerCase() == searchName.toLowerCase()) {
           // User matched!
           found = true;
-        
+
           var profileLink = userRow.children('td').eq(1).children('a').eq(0).attr('href');
           var postCount = userRow.children('td').eq(4).text();
           var regDate = userRow.children('td').eq(2).text().split(',')[0];
           var lastVisitDate = userRow.children('td').eq(3).text().split(',')[0];
           bot.say(to, username + ': ' + postCount + ' posts on the Community Forums, last visited ' + lastVisitDate + ', member since ' + regDate + '. ' + profileLink);
         }
-      
+
       });
-    
+
       if (!found) {
         if (usernamesFound.length > 0) {
           bot.say(to, 'I couldn\'t find ' + searchName + ', did you mean ' + usernamesFound[Math.floor(Math.random()*usernamesFound.length)] + '?');
@@ -197,9 +198,9 @@ var searchDocs = function(bot, to, term) {
     google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
     term = term.split(' ').slice(1).join(' ');
   }
-  
+
   util.log('Search docs for: ' + term + ' and get ' + google.resultsPerPage + ' results');
-  
+
   google(term + ' site:docs.mybb.com', function(err, next, links){
     if (err) {
       util.log(err);
@@ -233,9 +234,9 @@ var searchGoogle = function(bot, to, term) {
     google.resultsPerPage = Math.min(parseInt(firstTerm), 5);
     term = term.split(' ').slice(1).join(' ');
   }
-  
+
   util.log('Search Google for: ' + term + ' and get ' + google.resultsPerPage + ' results');
-  
+
   google(term, function(err, next, links){
     if (err) {
       util.log(err);
@@ -262,7 +263,7 @@ var searchGoogle = function(bot, to, term) {
 
 var battle = function(bot, to, term1, term2) {
   util.log('Google battle: ' + term1 + ' vs. ' + term2);
-  
+
   var getNumResults = function (error, response, body, callback) {
     if (!error && response.statusCode == 200) {
       $ = cheerio.load(body);
@@ -287,12 +288,12 @@ var battle = function(bot, to, term1, term2) {
 
   async.parallel({
     '1': function (callback) {
-      request.get('https://www.google.com/search?q=' + term1, function (error, response, body) { 
+      request.get('https://www.google.com/search?q=' + term1, function (error, response, body) {
         getNumResults(error, response, body, callback);
       });
     },
     '2': function (callback) {
-      request.get('https://www.google.com/search?q=' + term2, function (error, response, body) { 
+      request.get('https://www.google.com/search?q=' + term2, function (error, response, body) {
         getNumResults(error, response, body, callback);
       });
     }
